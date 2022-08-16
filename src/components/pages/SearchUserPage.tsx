@@ -1,11 +1,12 @@
 import { useFormik } from "formik";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 import * as yup from "yup";
 import useUserRepositoryQuery from "../../hooks/user-repository-search/useUserRepositoryQuery";
 import useUserQuery from "../../hooks/user-search/useUserQuery";
 import { addAlert, ALERT_TYPES } from "../../slices/alert";
 import { popLoading, pushLoading } from "../../slices/loading";
+import { cleanUserRepositories } from "../../slices/userRepositorySearch";
 import SearchUsernameForm, {
   SearchUsernameFormModel,
 } from "../forms/search-username-form/SearchUsernameForm";
@@ -45,51 +46,53 @@ const SearchUserPage = () => {
       username: userSearchResult?.searchString || "",
     },
     validationSchema: schema,
-    onSubmit: async (values) => {
-      await queryUser(values, 1);
+    onSubmit: (values) => {
+      queryUser(values, 1);
     },
   });
 
-  useEffect(() => {
-    if (userRepositoriesSearchErrors.length) {
-      dispatch(
-        addAlert({
-          message:
-            userRepositoriesSearchErrors[
-              userRepositoriesSearchErrors.length - 1
-            ],
-          alertType: ALERT_TYPES.ERROR,
-        })
-      );
-    }
-  }, [dispatch, userRepositoriesSearchErrors]);
+  const displayErrors = useCallback(
+    (errors: string[]) => {
+      if (errors.length) {
+        dispatch(
+          addAlert({
+            message: errors[errors.length - 1],
+            alertType: ALERT_TYPES.ERROR,
+          })
+        );
+      }
+    },
+    [dispatch]
+  );
 
   useEffect(() => {
-    if (userSearchErrors.length) {
-      dispatch(
-        addAlert({
-          message: userSearchErrors[userSearchErrors.length - 1],
-          alertType: ALERT_TYPES.ERROR,
-        })
-      );
-    }
-  }, [dispatch, userSearchErrors]);
+    displayErrors(userRepositoriesSearchErrors);
+  }, [displayErrors, userRepositoriesSearchErrors]);
 
   useEffect(() => {
-    if (loading) {
-      dispatch(pushLoading());
-    } else {
-      dispatch(popLoading());
-    }
+    displayErrors(userSearchErrors);
+  }, [displayErrors, userSearchErrors]);
+
+  useEffect(() => {
+    loading ? dispatch(pushLoading()) : dispatch(popLoading());
   }, [dispatch, loading]);
+
+  useEffect(() => {
+    if (userSearchResult) {
+      dispatch(cleanUserRepositories());
+    }
+  }, [dispatch, userSearchResult]);
 
   const [activeUser, setActiveUser] = useState("");
 
-  const currentPage = !!userSearchResult?.page ? userSearchResult.page : 0;
+  const currentPage = useMemo(
+    () => (!!userSearchResult?.page ? userSearchResult.page : 0),
+    [userSearchResult]
+  );
 
   return (
     <>
-      <SearchUsernameForm {...formik} />
+      <SearchUsernameForm {...formik} isSubmitting={userSearchLoading} />
       <br />
       {userSearchResult && !userSearchResult.results.total_count && (
         <p>No users with "{userSearchResult.searchString}" were found</p>
@@ -105,24 +108,19 @@ const SearchUserPage = () => {
             activeUser={activeUser}
             setActiveUser={setActiveUser}
           />
-          {!!currentPage &&
-            !!userSearchResult?.results.total_count &&
-            userSearchResult.results.total_count > numberUserPerPage && (
-              <div className=" d-flex justify-content-center">
-                <Paginator
-                  currentPage={currentPage}
-                  pagesToIndex={pagesToIndex}
-                  onClick={(page: number) => {
-                    queryUser(
-                      { username: userSearchResult.searchString },
-                      page
-                    );
-                  }}
-                  totalCount={userSearchResult.results.total_count}
-                  elementsPerPage={numberUserPerPage}
-                />
-              </div>
-            )}
+          {userSearchResult.results.total_count > numberUserPerPage && (
+            <div className=" d-flex justify-content-center">
+              <Paginator
+                currentPage={currentPage}
+                pagesToIndex={pagesToIndex}
+                onClick={(page: number) => {
+                  queryUser({ username: userSearchResult.searchString }, page);
+                }}
+                totalCount={userSearchResult.results.total_count}
+                elementsPerPage={numberUserPerPage}
+              />
+            </div>
+          )}
         </>
       )}
     </>

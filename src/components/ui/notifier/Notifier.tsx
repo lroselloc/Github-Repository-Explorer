@@ -44,15 +44,7 @@ export const Notifier = () => {
 
   return (
     <>
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-      ></ToastContainer>
+      <ToastContainer {...toastOptions}></ToastContainer>
     </>
   );
 };

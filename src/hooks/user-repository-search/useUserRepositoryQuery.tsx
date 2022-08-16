@@ -14,7 +14,7 @@ const useUserRepositoryQuery = (): [
     userLogin: string,
     userRepositories: UsersRepositories,
     page?: number
-  ) => Promise<void>,
+  ) => void,
   (userLogin: string, userRepositories: UsersRepositories) => void,
   string[],
   boolean
@@ -25,7 +25,7 @@ const useUserRepositoryQuery = (): [
   );
 
   const getUserRepositories = useCallback(
-    async (
+    (
       userLogin: string,
       userRepositories: UsersRepositories,
       page: number = 1
@@ -35,8 +35,6 @@ const useUserRepositoryQuery = (): [
         return;
       }
       appDispatch(searchUserRepository({ username: userLogin, page: page }));
-
-      return;
     },
     [appDispatch, status]
   );

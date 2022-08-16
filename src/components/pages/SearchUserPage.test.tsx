@@ -116,11 +116,6 @@ describe("given an user search and search button clicked", () => {
     });
 
     await waitFor(async () => {
-      const button = await screen.findByText(/search/i);
-      expect(button).toBeDisabled();
-    });
-
-    await waitFor(async () => {
       const input = await screen.findByLabelText("username", { exact: false });
       expect(input).toBeInTheDocument();
     });

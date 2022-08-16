@@ -1,5 +1,8 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { APIRateLimitExceededError } from "../api/apiService";
+import {
+  APIRateLimitExceededError,
+  APIUnprocessableEntityError,
+} from "../api/apiService";
 import { getUserRepositories } from "../api/userRepositoryService";
 import { UserRepositorySearchData } from "../models/userRepositorySearchData";
 import { UserRepositorySearchResult } from "../models/userRepositorySearchResult";
@@ -49,6 +52,18 @@ export const searchUserRepository = createAsyncThunk<
     } catch (exception) {
       if (exception instanceof APIRateLimitExceededError) {
         return rejectWithValue(exception.message);
+      }
+      // user does not have public repositories
+      if (exception instanceof APIUnprocessableEntityError) {
+        return {
+          page: userRepositorySearchData.page,
+          username: userRepositorySearchData.username,
+          results: {
+            total_count: 0,
+            incomplete_results: false,
+            items: [],
+          },
+        };
       }
 
       return rejectWithValue(

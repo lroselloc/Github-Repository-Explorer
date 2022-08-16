@@ -6,6 +6,20 @@ const AUTH_CONFIG = {
   password: process.env.REACT_APP_GITHUB_APP_SECRET || "",
 };
 const STATUS_CODE_API_RATE_EXCEEDED = 403;
+const STATUS_CODE_API_UNPROCESSABLE_ENTITY = 422;
+
+interface APIError {
+  message: string;
+  errors: [
+    {
+      message: string;
+      resource: string;
+      field: string;
+      code: string;
+    }
+  ];
+  documentation_url: "https://docs.github.com/v3/search/";
+}
 
 class APIRateLimitExceededError extends Error {
   constructor() {
@@ -13,6 +27,15 @@ class APIRateLimitExceededError extends Error {
       "Too many consecutive API calls have been done. Please,try again in a few minutes."
     );
     this.name = "APIRateLimitExceededError";
+  }
+}
+
+class APIUnprocessableEntityError extends Error {
+  error: APIError;
+  constructor(pError: APIError) {
+    super(pError.message);
+    this.name = "APIUnprocessableEntityError";
+    this.error = pError;
   }
 }
 
@@ -36,6 +59,9 @@ const get = async <T>(url: string) => {
       if (exception.response?.status === STATUS_CODE_API_RATE_EXCEEDED) {
         throw new APIRateLimitExceededError();
       }
+      if (exception.response?.status === STATUS_CODE_API_UNPROCESSABLE_ENTITY) {
+        throw new APIUnprocessableEntityError(exception.toJSON() as APIError);
+      }
     }
     throw new APICustomError();
   }
@@ -48,4 +74,5 @@ export {
   get,
   APIRateLimitExceededError,
   APICustomError,
+  APIUnprocessableEntityError,
 };

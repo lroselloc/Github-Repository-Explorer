@@ -9,13 +9,13 @@ type LayoutProps = {
 const Layout = ({ children }: LayoutProps) => {
   return (
     <>
-      <Notifier />
       <LoadingOverlay />
       <Navbar bg="primary" variant="light">
         <Container>
           <Navbar.Brand>GitHub Repository Explorer</Navbar.Brand>
         </Container>
       </Navbar>
+      <Notifier />
       <br></br>
       <Container>{children}</Container>
     </>
